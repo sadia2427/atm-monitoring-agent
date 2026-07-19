@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Logs
+*.log
+logs/
+
+# Crash Dumps
+crash/
+crashes/
+
+# Database
+*.db
+
+# Environment
+.env
+
+# Build
+build/
+dist/
+*.spec
+
+# IDE
+.vscode/
+.idea/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
