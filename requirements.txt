@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+pyodbc
+aioodbc
+python-socketio
+httpx
+pydantic
+pydantic-settings

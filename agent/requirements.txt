@@ -1,0 +1,7 @@
+sqlalchemy>=2.0.0
+pyodbc
+pydantic>=2.0.0
+pydantic-settings
+python-dotenv
+watchdog
+pywin32
