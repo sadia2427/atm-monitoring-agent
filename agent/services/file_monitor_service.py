@@ -1,7 +1,6 @@
 import os
 import time
 import threading
-import logging
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from utils.logger import agent_logger
@@ -83,9 +82,14 @@ class FileMonitorService:
             except Exception as e:
                 agent_logger.error(f"Error stopping Watchdog observer: {e}")
             self.observer = None
+
+        if self.polling_thread:
+            try:
+                self.polling_thread.join(timeout=3.0)
+            except Exception as e:
+                agent_logger.error(f"Error joining polling thread: {e}")
+            self.polling_thread = None
             
-        # Flush logging system
-        logging.shutdown()
         agent_logger.info("File monitoring stopped gracefully.")
 
     def trigger_scan(self):

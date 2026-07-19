@@ -89,6 +89,11 @@ class AgentSettingsCache:
                 else:
                     session.expunge(settings)
                     self._cached_settings = settings
+                    try:
+                        from utils.metrics import metrics_tracker
+                        metrics_tracker.record_config_reload()
+                    except Exception:
+                        pass
                 
                 self._last_loaded = now
                 return self._cached_settings

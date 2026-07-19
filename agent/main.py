@@ -17,24 +17,57 @@ from utils.crash_handler import register_crash_handler
 from version import get_version_info
 from services.parser_service import ParserService
 from services.file_monitor_service import FileMonitorService
+from services.heartbeat_service import HeartbeatService
+from services.cleanup_service import CleanupService
+from services.health_monitor_service import HealthMonitorService
 
-# Global monitor pointer for signal handler access
+# Global service references for signal handler access
 monitor = None
+heartbeat = None
+cleanup = None
+health_monitor = None
 running = True
 
 def handle_shutdown(signum, frame):
-    global monitor, running
+    global monitor, heartbeat, cleanup, health_monitor, running
     agent_logger.info(f"Signal received ({signum}). Initiating graceful shutdown...")
     log_windows_event("ATM Monitoring Agent Shutdown Initiated", level="INFO")
     running = False
+    
+    # 1. Stop health monitor first to avoid it trying to restart workers during shutdown
+    if health_monitor:
+        try:
+            health_monitor.stop()
+        except Exception as e:
+            agent_logger.error(f"Error stopping health monitor: {e}")
+            
+    # 2. Stop file monitor
     if monitor:
-        monitor.stop()
+        try:
+            monitor.stop()
+        except Exception as e:
+            agent_logger.error(f"Error stopping file monitor: {e}")
+            
+    # 3. Stop heartbeat
+    if heartbeat:
+        try:
+            heartbeat.stop()
+        except Exception as e:
+            agent_logger.error(f"Error stopping heartbeat: {e}")
+            
+    # 4. Stop cleanup
+    if cleanup:
+        try:
+            cleanup.stop()
+        except Exception as e:
+            agent_logger.error(f"Error stopping cleanup: {e}")
+            
     agent_logger.info("Graceful shutdown completed. Exiting.")
     log_windows_event("ATM Monitoring Agent Stopped Gracefully", level="INFO")
     sys.exit(0)
 
 def main():
-    global monitor, running
+    global monitor, heartbeat, cleanup, health_monitor, running
     
     # 1. Register global unhandled exception hook
     register_crash_handler()
@@ -123,8 +156,9 @@ Startup Timestamp:     {v_info['StartupTimestamp']}
         
         log_windows_event(f"ATM Agent connected to database for ATM TerminalId '{term_id}'.", level="INFO")
         
-        # Initialize parser and monitoring services
+        # 5. Initialize services
         parser_service = ParserService(SessionLocal)
+        
         monitor = FileMonitorService(
             atm_id=atm.Id,
             file_path=log_path,
@@ -132,8 +166,32 @@ Startup Timestamp:     {v_info['StartupTimestamp']}
             scan_interval=settings.LogScanIntervalSeconds
         )
         
-        # Start file monitoring (runs background polling thread and watchdog)
+        heartbeat = HeartbeatService(
+            atm_id=atm.Id,
+            session_factory=SessionLocal,
+            interval=settings.HeartbeatIntervalSeconds
+        )
+        
+        cleanup = CleanupService(
+            session_factory=SessionLocal,
+            interval_seconds=86400  # Run daily database and file purge check
+        )
+        
+        health_monitor = HealthMonitorService(
+            monitor_service=monitor,
+            heartbeat_service=heartbeat,
+            max_restarts=5,
+            check_interval=10
+        )
+        
+        # Link references for dynamic diagnostics generation
+        heartbeat.set_services(monitor, health_monitor)
+        
+        # 6. Start worker threads
         monitor.start()
+        heartbeat.start()
+        cleanup.start()
+        health_monitor.start()
         
         # Keep main thread alive
         while running:

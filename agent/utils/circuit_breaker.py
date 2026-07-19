@@ -60,5 +60,6 @@ class CircuitBreaker:
                 agent_logger.error(f"Circuit Breaker transitioned to OPEN. Database failures: {self.failure_count}. Cooldown starts.")
                 log_windows_event(f"Circuit Breaker transitioned to OPEN. Database failures: {self.failure_count}.", level="ERROR")
                 metrics_tracker.set_circuit_breaker_state("OPEN")
+                metrics_tracker.record_cb_trip()
 
 

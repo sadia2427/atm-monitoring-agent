@@ -27,8 +27,6 @@ class ProcessingStatistics:
 class EventProcessorService:
     def __init__(self, session_factory):
         self.session_factory = session_factory
-        self._simulate_event_error_seq = None
-        self._simulate_concurrency_conflict = False
 
     def process_result(self, atm_id: int, result: ParserResult) -> ProcessingStatistics:
         """
@@ -53,16 +51,14 @@ class EventProcessorService:
             
             try:
                 # Start transaction explicitly
-                agent_logger.info("Transaction Started")
+                agent_logger.debug("Transaction Started")
                 session.begin()
                 
                 event_repo = EventRepository(session)
                 cassette_repo = CassetteRepository(session)
                 live_status_repo = LiveStatusRepository(session)
                 
-                # Test hook to fail processing on a specific sequence number
-                if self._simulate_event_error_seq == ev.EventSequenceNumber:
-                    raise Exception(f"Simulated event processing failure for sequence {ev.EventSequenceNumber}")
+
 
                 # 1. Idempotency duplicate checks
                 is_duplicate = False
@@ -74,7 +70,7 @@ class EventProcessorService:
                     stats.DuplicateEvents += 1
                     stats.EventsSkipped += 1
                     session.rollback()
-                    agent_logger.info("Transaction Rolled Back")
+                    agent_logger.debug("Transaction Rolled Back")
                     continue
 
                 # 2. Insert ATMEvent database row
@@ -172,9 +168,7 @@ class EventProcessorService:
                         
                     original_version = status.RowVersion
                     
-                    # Concurrency conflict simulation hook
-                    if self._simulate_concurrency_conflict and attempt_idx == 0:
-                        original_version = b'\x00\x00\x00\x00\x00\x00\x00\x00'
+
 
                     # Timestamp Protection: ignore status update if a newer event exists
                     if status.LastEventTime is not None and status.LastEventTime > ev.EventTime:
@@ -192,7 +186,7 @@ class EventProcessorService:
                         stats.LiveStatusUpdates += 1
                         break
                     else:
-                        agent_logger.info("Concurrency Retry")
+                        agent_logger.debug("Concurrency Retry")
                         stats.DatabaseRetries += 1
                         # Continue loop to reload and retry once
                         
@@ -201,7 +195,7 @@ class EventProcessorService:
 
                 # Commit Transaction
                 session.commit()
-                agent_logger.info("Transaction Committed")
+                agent_logger.debug("Transaction Committed")
 
             except Exception as e:
                 try:
@@ -220,10 +214,24 @@ class EventProcessorService:
         end_time = time.perf_counter()
         stats.ProcessingTimeMs = (end_time - start_time) * 1000.0
         
-        agent_logger.info("Processing Finished")
-        agent_logger.info(f"Rows Inserted: {stats.EventsInserted + stats.CassetteSnapshotsInserted}")
-        agent_logger.info(f"Rows Updated: {stats.LiveStatusUpdates}")
-        agent_logger.info(f"Processing Duration (ms): {stats.ProcessingTimeMs:.2f}")
+        from utils.metrics import metrics_tracker
+        perf = metrics_tracker.get_performance_metrics()
+        
+        summary = (
+            f"\n"
+            f"====================================================\n"
+            f"BATCH PROCESSING SUMMARY\n"
+            f"====================================================\n"
+            f"Events Processed:         {stats.EventsProcessed}\n"
+            f"Events Persisted:         {stats.EventsInserted + stats.CassetteSnapshotsInserted}\n"
+            f"Duplicate Events Skipped: {stats.DuplicateEvents}\n"
+            f"Average Parse Time:       {perf.get('AverageParseTime', 0.0) * 1000.0:.2f} ms\n"
+            f"Average DB Commit Time:   {perf.get('AverageDbCommitTime', 0.0) * 1000.0:.2f} ms\n"
+            f"Total Retries:            {stats.DatabaseRetries}\n"
+            f"Total Duration:           {stats.ProcessingTimeMs:.2f} ms\n"
+            f"===================================================="
+        )
+        agent_logger.info(summary)
         
         return stats
 

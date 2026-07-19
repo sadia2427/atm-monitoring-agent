@@ -29,6 +29,17 @@ def log_windows_event(message: str, level: str = "INFO"):
         # Ignore silently if pywin32 is not installed or EventLog is inaccessible
         pass
 
+class StructuredFormatter(logging.Formatter):
+    def format(self, record):
+        import threading
+        record.threadName = threading.current_thread().name
+        try:
+            from config import config
+            record.atmId = config.atm_terminal_id
+        except Exception:
+            record.atmId = "N/A"
+        return super().format(record)
+
 def setup_logger(name: str = "ATMAgent", log_file: str = "agent.log", max_bytes: int = 10 * 1024 * 1024, backup_count: int = 5) -> logging.Logger:
     """Configures and returns a structured logging instance with log rotation."""
     logger = logging.getLogger(name)
@@ -37,8 +48,8 @@ def setup_logger(name: str = "ATMAgent", log_file: str = "agent.log", max_bytes:
     if logger.handlers:
         return logger
         
-    formatter = logging.Formatter(
-        "[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s",
+    formatter = StructuredFormatter(
+        "[%(asctime)s] [%(levelname)s] [Thread:%(threadName)s] [ATM:%(atmId)s] [%(name)s] - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
     )
     

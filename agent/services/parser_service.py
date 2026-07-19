@@ -21,9 +21,7 @@ class ParserService:
         self.processor = EventProcessorService(session_factory)
         self.backoff_delays = backoff_delays if backoff_delays is not None else [5, 10, 20, 40, 60]
         self.circuit_breaker = CircuitBreaker(failure_threshold=5, cooldown_seconds=30.0)
-        self._simulate_db_error = False
-        self._simulate_db_error_count = 0
-        self._simulate_transaction_error = False
+
 
     def process_file(self, atm_id: int, file_path: str) -> bool:
         """
@@ -43,34 +41,6 @@ class ParserService:
         attempt = 0
         
         while True:
-            # Test hook simulation for database connection loss
-            if self._simulate_db_error and self._simulate_db_error_count > 0:
-                self._simulate_db_error_count -= 1
-                db_err = sqlalchemy.exc.OperationalError("Simulated SQL Server connection loss", None, None)
-                metrics_tracker.record_db_failure()
-                self.circuit_breaker.record_failure()
-                
-                # Check if breaker opened
-                if not self.circuit_breaker.can_execute():
-                    agent_logger.warning("Circuit breaker opened during simulated connection retry. Aborting loop.")
-                    return False
-                    
-                attempt += 1
-                delay = self.backoff_delays[min(attempt - 1, len(self.backoff_delays) - 1)]
-                agent_logger.warning(
-                    f"SQL Retry Started. Retry Attempt Number {attempt}. "
-                    f"Current Backoff Delay {delay} seconds. Error: {db_err}"
-                )
-                log_windows_event(
-                    f"SQL Retry Started. Retry Attempt Number {attempt}. Delay {delay}s. Error: {db_err}",
-                    level="WARNING"
-                )
-                metrics_tracker.record_retry()
-                metrics_tracker.record_reconnect()
-                metrics_tracker.set_retry_state(True)
-                time.sleep(delay)
-                continue
-
             session = self.session_factory()
             try:
                 # 1. Start implicit transaction scope for file state check
@@ -130,7 +100,7 @@ class ParserService:
                 # 3. Check if there are new bytes to read
                 if file_size == state.LastReadOffset:
                     session.commit()
-                    agent_logger.info("Transaction Committed")
+                    agent_logger.debug("Transaction Committed")
                     self._record_reconnect_success(attempt)
                     
                     self.circuit_breaker.record_success()
@@ -145,7 +115,7 @@ class ParserService:
                 
                 if not lines:
                     session.commit()
-                    agent_logger.info("Transaction Committed")
+                    agent_logger.debug("Transaction Committed")
                     self._record_reconnect_success(attempt)
                     
                     self.circuit_breaker.record_success()
@@ -176,10 +146,7 @@ class ParserService:
                 commit_start = time.perf_counter()
                 self.processor.process_result(atm_id, result)
 
-                # Test hook to simulate transaction error
-                if self._simulate_transaction_error:
-                    self._simulate_transaction_error = False
-                    raise Exception("Simulated transaction rollback error")
+
 
                 # 7. Update AgentFileState on successful parse completion
                 state.LastReadOffset = new_offset
@@ -198,7 +165,7 @@ class ParserService:
                 agent_repo.update_file_state(state)
                 session.commit()
                 commit_duration = time.perf_counter() - commit_start
-                agent_logger.info("Transaction Committed")
+                agent_logger.debug("Transaction Committed")
                 
                 self._record_reconnect_success(attempt)
                 

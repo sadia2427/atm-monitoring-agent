@@ -4,7 +4,7 @@ import os
 import socket
 from datetime import datetime
 
-AGENT_VERSION = "1.0.0"
+AGENT_VERSION = "v1.0.0-rc1"
 BUILD_NUMBER = "1042"
 BUILD_DATE = "2026-07-19"
 PARSER_VERSION = "2.1.0"

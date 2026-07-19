@@ -36,6 +36,14 @@ class MetricsTracker:
         self.circuit_breaker_state = "CLOSED"
         self.pool_health = "HEALTHY"
 
+        # Extended Runtime Diagnostics Metrics
+        self.heartbeat_count = 0
+        self.config_reload_count = 0
+        self.cb_trips_count = 0
+        self.parser_restart_count = 0
+        self.worker_restart_count = 0
+        self.peak_cpu_usage = 0.0
+
         # Performance Metrics
         self.parse_times = []
         self.commit_times = []
@@ -99,6 +107,26 @@ class MetricsTracker:
         with self.lock:
             self.circuit_breaker_state = state
 
+    def record_heartbeat(self):
+        with self.lock:
+            self.heartbeat_count += 1
+
+    def record_config_reload(self):
+        with self.lock:
+            self.config_reload_count += 1
+
+    def record_cb_trip(self):
+        with self.lock:
+            self.cb_trips_count += 1
+
+    def record_parser_restart(self):
+        with self.lock:
+            self.parser_restart_count += 1
+
+    def record_worker_restart(self):
+        with self.lock:
+            self.worker_restart_count += 1
+
     def get_connection_diagnostics(self) -> dict:
         with self.lock:
             return {
@@ -123,7 +151,12 @@ class MetricsTracker:
                 "DatabaseFailures": self.database_failures,
                 "ParserFailures": self.parser_failures,
                 "Retries": self.retries,
-                "CurrentOffset": self.current_offset
+                "CurrentOffset": self.current_offset,
+                "HeartbeatCount": self.heartbeat_count,
+                "ConfigReloadCount": self.config_reload_count,
+                "CircuitBreakerTrips": self.cb_trips_count,
+                "ParserRestarts": self.parser_restart_count,
+                "WorkerRestarts": self.worker_restart_count
             }
 
     def get_performance_metrics(self) -> dict:
