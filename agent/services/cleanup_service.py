@@ -82,9 +82,9 @@ class CleanupService:
             session.close()
 
         # 2. Log and Crash Dump Files Cap
-        agent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        log_dir = agent_dir
-        crash_dir = os.path.join(agent_dir, "crash")
+        from utils.paths import get_log_dir, get_crash_dir
+        log_dir = get_log_dir()
+        crash_dir = get_crash_dir()
         
         max_disk_mb = settings.MaxLogFileSizeMB if settings else 100
         max_bytes = max_disk_mb * 1024 * 1024

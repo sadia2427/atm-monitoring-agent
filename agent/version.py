@@ -11,6 +11,9 @@ PARSER_VERSION = "2.1.0"
 GIT_COMMIT = "a7b3c2d"
 
 def get_git_commit():
+    # In a frozen PyInstaller executable, git is unavailable
+    if getattr(sys, 'frozen', False):
+        return GIT_COMMIT
     try:
         import subprocess
         # Get short git commit hash

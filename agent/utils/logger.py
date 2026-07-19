@@ -77,9 +77,9 @@ def setup_logger(name: str = "ATMAgent", log_file: str = "agent.log", max_bytes:
         
     return logger
 
-# Determine log file path in the agent directory
-agent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-log_file_path = os.path.join(agent_dir, "agent.log")
+# Determine log file path using centralized path resolution
+from utils.paths import get_log_file_path
+log_file_path = get_log_file_path("agent.log")
 
 # Instantiate default logger
 agent_logger = setup_logger(log_file=log_file_path)

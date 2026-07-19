@@ -100,8 +100,8 @@ def generate_diagnostics_snapshot(atm_id: int, file_path: str, parser_service, m
                 return obj.strftime("%Y-%m-%d %H:%M:%S")
             raise TypeError("Type not serializable")
             
-        agent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        snapshot_path = os.path.join(agent_dir, "diagnostics.json")
+        from utils.paths import get_diagnostics_file_path
+        snapshot_path = get_diagnostics_file_path("diagnostics.json")
         
         with open(snapshot_path, "w", encoding="utf-8") as f:
             json.dump(snapshot, f, indent=4, default=json_serial)

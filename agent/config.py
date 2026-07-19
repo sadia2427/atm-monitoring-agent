@@ -1,13 +1,10 @@
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
+from utils.paths import get_env_file_path
 
-# Dynamically locate .env file in parent directories if not found in current working directory
-env_path = ".env"
-if not os.path.exists(env_path):
-    parent_env = os.path.join("..", ".env")
-    if os.path.exists(parent_env):
-        env_path = parent_env
+# Resolve .env file using centralized path resolution (supports frozen executables)
+env_path = get_env_file_path()
 
 class AgentConfig(BaseSettings):
     atm_terminal_id: str

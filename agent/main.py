@@ -5,8 +5,9 @@ import signal
 import datetime
 import socket
 
-# Ensure the agent root folder is in the Python load path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Ensure the agent root folder is in the Python load path (development mode only)
+if not getattr(sys, 'frozen', False):
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config import config
 from database.db import test_db_connection, SessionLocal
@@ -69,6 +70,10 @@ def handle_shutdown(signum, frame):
 def main():
     global monitor, heartbeat, cleanup, health_monitor, running
     
+    # 0. Bootstrap writable runtime directories (logs/, crash/)
+    from utils.paths import bootstrap_directories, get_application_dir
+    bootstrap_directories()
+    
     # 1. Register global unhandled exception hook
     register_crash_handler()
     
@@ -124,8 +129,8 @@ def main():
         v_info = get_version_info(terminal_id=term_id)
         current_user = os.getenv("USERNAME") or os.getenv("USER") or "N/A"
         
-        agent_dir = os.path.dirname(os.path.abspath(__file__))
-        log_dir = agent_dir
+        agent_dir = get_application_dir()
+        log_dir = os.path.join(agent_dir, "logs")
         
         audit_summary = f"""
 ====================================================

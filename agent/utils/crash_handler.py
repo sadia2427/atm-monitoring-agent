@@ -60,10 +60,8 @@ STACK TRACE
     
     # Save to dedicated crash log file
     try:
-        agent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        crash_dir = os.path.join(agent_dir, "crash")
-        os.makedirs(crash_dir, exist_ok=True)
-        crash_file = os.path.join(crash_dir, f"crash_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+        from utils.paths import get_crash_file_path
+        crash_file = get_crash_file_path(f"crash_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
         with open(crash_file, "w", encoding="utf-8") as f:
             f.write(crash_report)
         agent_logger.critical(f"FATAL: Unhandled exception occurred. Crash dump written to '{crash_file}'")
