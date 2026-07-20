@@ -102,10 +102,10 @@ const App = {
   },
 
   // -------------------------------------------------------------------------
-  // Real-time Updates (SignalR)
+  // Real-time Updates (Socket.IO)
   // -------------------------------------------------------------------------
   initSocket() {
-    this.socket = io({ path: "/socket.io" });
+    this.socket = io();
 
     const connDot = document.getElementById('connectionStatus');
     const connDotDot = connDot.querySelector('.status-dot');
@@ -123,12 +123,6 @@ const App = {
       connDotDot.className = 'status-dot offline';
       connLabel.textContent = 'Disconnected';
       connDot.title = 'Server disconnected';
-    });
-
-    this.socket.on('connect_error', () => {
-      console.warn('[socket] Connection error...');
-      connDotDot.className = 'status-dot offline';
-      connLabel.textContent = 'Reconnecting';
     });
 
     // Handle updates triggered by background monitoring
@@ -592,15 +586,7 @@ const App = {
 
       const hddText = d.nvr_hdd_status || 'Unknown';
       const hddBadgeClass = hddText === 'Healthy' ? 'recording-ok' : (hddText === 'HDD Error' ? 'recording-issue' : 'recording-unknown');
-      
-      let spaceInfo = '';
-      if (d.nvr_hdd_capacity && d.nvr_hdd_used) {
-        spaceInfo = `<div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 4px; font-weight: 500; white-space: nowrap;">Used: ${d.nvr_hdd_used} / ${d.nvr_hdd_capacity}</div>`;
-      }
-      hddHtml = `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
-        <span class="device-card-badge ${hddBadgeClass}">${hddText}</span>
-        ${spaceInfo}
-      </div>`;
+      hddHtml = `<span class="device-card-badge ${hddBadgeClass}">${hddText}</span>`;
 
       if (d.is_online) {
         if (nvrCameras.length > 0) {
@@ -624,110 +610,39 @@ const App = {
           <td>${pingText}</td>
           <td>${hddHtml}</td>
           <td>${lastRecHtml}</td>
-          <td>${camHtml}</td>
-          <td id="nvr-time-diff-${d.id}"><span style="color:var(--text-muted)">--</span></td>
+          <td>${camHtml} 🔍</td>
           <td>
+            <button class="btn btn-ghost btn-icon-only" onclick="event.stopPropagation(); App.checkNvrRecording(${d.id})" title="Trigger manual recording check">
+              🔄
+            </button>
             ${showActions ? `
-              <button class="btn btn-ghost btn-icon-only" onclick="event.stopPropagation(); App.syncNvrTime(${d.id})" title="Sync NVR Clock with NTP Server">
-                ⏰
-              </button>
               <button class="btn btn-ghost btn-icon-only" onclick="event.stopPropagation(); App.openEditDeviceModal(${d.id})" title="Edit">
                 ✏️
               </button>
               <button class="btn btn-danger btn-icon-only" onclick="event.stopPropagation(); App.confirmDelete(${d.id})" title="Delete">
                 🗑️
               </button>
-            ` : '--'}
+            ` : ''}
           </td>
         </tr>
         <tr id="nvr-cams-${d.id}" class="nvr-cams-subrow" style="display: none; background: rgba(255, 255, 255, 0.015);">
-          <td colspan="10" style="padding: 0;">
+          <td colspan="9" style="padding: 0;">
             <div style="padding: 0.75rem 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; border-left: 4px solid var(--accent-blue); text-align: left;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
-                <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Connected Cameras (${nvrCameras.length})</div>
-                ${nvrCameras.length > 0 && showActions ? `
-                  <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem;">
-                    <span style="color: var(--text-secondary);">Set all main stream:</span>
-                    <select onchange="App.batchChangeCameraResolution(${d.id}, this.value); this.value='';" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 4px; font-size: 0.75rem; cursor: pointer;">
-                      <option value="">Select resolution...</option>
-                      <option value="1920x1080">1080p (1920x1080)</option>
-                      <option value="1280x720">720p (1280x720)</option>
-                      <option value="704x576">D1 (704x576)</option>
-                      <option value="640x480">VGA (640x480)</option>
-                      <option value="352x288">CIF (352x288)</option>
-                    </select>
-                  </div>
-                ` : ''}
-              </div>
+              <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Connected Cameras (${nvrCameras.length})</div>
               ${nvrCameras.length === 0 ? `
                 <div style="font-size: 0.8rem; color: var(--text-muted);">No cameras registered under this NVR.</div>
               ` : `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1rem; width: 100%;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.75rem; width: 100%;">
                   ${nvrCameras.map(c => {
                     const camStatusClass = c.is_online ? 'online' : 'offline';
                     const camPingText = c.is_online ? `${Math.round(c.last_latency)} ms` : 'Offline';
                     return `
-                      <div style="background: rgba(30, 41, 59, 0.45); padding: 1.25rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4); height: 100%;">
-                        <!-- Card Header -->
-                        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.75rem; margin-bottom: 0.25rem;">
-                          <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
-                            <span class="status-dot ${camStatusClass}" style="width: 10px; height: 10px;"></span>
-                            <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary); margin-right: 6px;">${c.name}</span>
-                            ${c.is_online ? `<button class="btn btn-ghost btn-icon-only" onclick="App.openCameraLiveModal(${c.id}, '${c.name}')" title="Live Preview" style="padding: 2px; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; height: 20px; width: 20px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); outline: none;">👁️</button>` : ''}
-                          </div>
-                          <span style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 500;">${c.ip} (${camPingText})</span>
+                      <div style="background: rgba(0, 0, 0, 0.15); padding: 0.5rem 0.75rem; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                          <span class="status-dot ${camStatusClass}" style="width: 8px; height: 8px;"></span>
+                          <span style="font-weight: 500; font-size: 0.8rem;">${c.name}</span>
                         </div>
-                        
-                        <!-- 2-Column Configuration Grid -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; row-gap: 14px; column-gap: 24px; flex: 1; align-content: start;">
-                          <!-- Field 1: Resolution (Main) -->
-                          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                            <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); white-space: nowrap;">Resolution (Main):</span>
-                            <select id="cam-${c.id}-main-res" disabled onchange="App.changeCameraResolution(${c.id}, 'main', this.value)" style="background: rgba(15, 23, 42, 0.6); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; outline: none; cursor: pointer; flex: 1; min-width: 135px; max-width: 180px; text-align: left;">
-                              <option value="">Loading...</option>
-                            </select>
-                          </div>
-                          
-                          <!-- Field 2: Resolution (Sub) -->
-                          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                            <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); white-space: nowrap;">Resolution (Sub):</span>
-                            <select id="cam-${c.id}-sub-res" disabled onchange="App.changeCameraResolution(${c.id}, 'sub', this.value)" style="background: rgba(15, 23, 42, 0.6); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; outline: none; cursor: pointer; flex: 1; min-width: 135px; max-width: 180px; text-align: left;">
-                              <option value="">Loading...</option>
-                            </select>
-                          </div>
-                          
-                          <!-- Field 3: FPS -->
-                          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                            <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); white-space: nowrap;">Framerate (FPS):</span>
-                            <select id="cam-${c.id}-main-fps" disabled onchange="App.changeCameraFramerate(${c.id}, this.value)" style="background: rgba(15, 23, 42, 0.6); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; outline: none; cursor: pointer; flex: 1; min-width: 135px; max-width: 180px; text-align: left;">
-                              <option value="">Loading...</option>
-                            </select>
-                          </div>
-                          
-                          <!-- Field 4: Protocol -->
-                          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                            <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); white-space: nowrap;">Protocol:</span>
-                            <select id="cam-${c.id}-main-proto" disabled onchange="App.changeCameraProtocol(${c.id}, this.value)" style="background: rgba(15, 23, 42, 0.6); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; outline: none; cursor: pointer; flex: 1; min-width: 135px; max-width: 180px; text-align: left;">
-                              <option value="">Loading...</option>
-                            </select>
-                          </div>
-                          
-                          <!-- Field 5: Bitrate -->
-                          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                            <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); white-space: nowrap;">Bitrate Limit:</span>
-                            <select id="cam-${c.id}-main-bitrate" disabled onchange="App.changeCameraBitrate(${c.id}, this.value)" style="background: rgba(15, 23, 42, 0.6); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; outline: none; cursor: pointer; flex: 1; min-width: 135px; max-width: 180px; text-align: left;">
-                              <option value="">Loading...</option>
-                            </select>
-                          </div>
-                          
-                          <!-- Field 6: Rec Range History -->
-                          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                            <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); white-space: nowrap;">Rec History:</span>
-                            <div id="cam-range-${c.id}" style="font-size: 0.72rem; color: var(--text-primary); font-weight: 600; text-align: right; flex: 1; white-space: nowrap;">
-                              <span style="font-style: italic; color: var(--text-muted); font-weight: normal;">Loading...</span>
-                            </div>
-                          </div>
-                        </div>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary);">${c.ip} (${camPingText})</span>
                       </div>
                     `;
                   }).join('')}
@@ -738,8 +653,6 @@ const App = {
         </tr>
       `;
     });
-
-    this.loadNvrTimeDifferences();
   },
 
   renderCamTable() {
@@ -1098,45 +1011,6 @@ const App = {
     }
   },
 
-  async checkAllNvrs() {
-    this.showToast('Refreshing all NVR devices...', 'info');
-    const nvrs = this.devices.filter(d => d.type === 'NVR');
-    if (nvrs.length === 0) {
-      this.showToast('No NVR devices to refresh', 'warning');
-      return;
-    }
-
-    let successCount = 0;
-    let failCount = 0;
-
-    // Run them in parallel batches of 5 to not overload connection limit or server
-    const batchSize = 5;
-    for (let i = 0; i < nvrs.length; i += batchSize) {
-      const batch = nvrs.slice(i, i + batchSize);
-      await Promise.all(batch.map(async (nvr) => {
-        try {
-          const res = await fetch(`/api/devices/${nvr.id}/check-nvr`, { method: 'POST' });
-          const result = await res.json();
-          if (res.ok && result.success && result.data.success) {
-            successCount++;
-          } else {
-            failCount++;
-          }
-        } catch (err) {
-          failCount++;
-        }
-      }));
-    }
-
-    await this.refreshData();
-
-    if (failCount === 0) {
-      this.showToast(`Successfully refreshed all ${successCount} NVRs!`, 'success');
-    } else {
-      this.showToast(`NVR refresh complete: ${successCount} succeeded, ${failCount} failed.`, 'warning');
-    }
-  },
-
   // -------------------------------------------------------------------------
   // Settings view
   // -------------------------------------------------------------------------
@@ -1180,7 +1054,7 @@ const App = {
       'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure', 'email_recipients',
       'sms_api_url', 'sms_api_method', 'sms_api_headers', 'sms_api_body_template', 'sms_recipients',
       'ping_interval_minutes', 'nvr_check_interval_minutes', 'email_alert_after_minutes', 'sms_alert_after_minutes',
-      'atm_api_key', 'ntp_server_ip', 'ntp_server_port'
+      'atm_api_key'
     ];
 
     keys.forEach(key => {
@@ -1382,7 +1256,17 @@ const App = {
 
   getRelativeTime(dateStr) {
     if (!dateStr) return 'N/A';
-    return dateStr;
+    const date = this.parseCustomDate(dateStr);
+    if (!date) return 'N/A';
+    const diffMs = Date.now() - date.getTime();
+    if (diffMs < 0) return 'Just now';
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    const diffHrs = Math.floor(diffMins / 60);
+    if (diffHrs < 24) return `${diffHrs} hr ago`;
+    const diffDays = Math.floor(diffHrs / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   },
 
   toggleNvrCameras(nvrId) {
@@ -1390,510 +1274,7 @@ const App = {
     if (subrow) {
       const isHidden = subrow.style.display === 'none';
       subrow.style.display = isHidden ? 'table-row' : 'none';
-      if (isHidden) {
-        this.loadNvrCamerasResolutions(nvrId);
-        this.loadNvrCamerasRecordingRanges(nvrId);
-      }
     }
-  },
-
-  async loadNvrCamerasResolutions(nvrId) {
-    const nvrCameras = this.devices.filter(c => c.type === 'CAM' && c.parent_nvr_id === nvrId);
-    for (const cam of nvrCameras) {
-      const mainSelect = document.getElementById(`cam-${cam.id}-main-res`);
-      const subSelect = document.getElementById(`cam-${cam.id}-sub-res`);
-      const fpsSelect = document.getElementById(`cam-${cam.id}-main-fps`);
-      const bitrateSelect = document.getElementById(`cam-${cam.id}-main-bitrate`);
-      const protoSelect = document.getElementById(`cam-${cam.id}-main-proto`);
-      
-      if (!mainSelect || !subSelect) continue;
-      
-      mainSelect.innerHTML = '<option value="">Loading...</option>';
-      subSelect.innerHTML = '<option value="">Loading...</option>';
-      mainSelect.disabled = true;
-      subSelect.disabled = true;
-      
-      if (fpsSelect) {
-        fpsSelect.innerHTML = '<option value="">Loading...</option>';
-        fpsSelect.disabled = true;
-      }
-      if (bitrateSelect) {
-        bitrateSelect.innerHTML = '<option value="">Loading...</option>';
-        bitrateSelect.disabled = true;
-      }
-      if (protoSelect) {
-        protoSelect.innerHTML = '<option value="">Loading...</option>';
-        protoSelect.disabled = true;
-      }
-      
-      try {
-        const res = await fetch(`/api/devices/${cam.id}/resolution`);
-        const result = await res.json();
-        
-        if (result.success) {
-          this.populateResolutionSelect(mainSelect, result.main);
-          this.populateResolutionSelect(subSelect, result.sub);
-          
-          if (fpsSelect && result.main && result.main.framerate !== undefined) {
-            this.populateFpsSelect(fpsSelect, result.main.framerate);
-          }
-          if (bitrateSelect && result.main && result.main.bitrate !== undefined) {
-            this.populateBitrateSelect(bitrateSelect, result.main.bitrate);
-          }
-          if (protoSelect && result.main && result.main.protocol !== undefined) {
-            this.populateProtocolSelect(protoSelect, result.main.protocol);
-          }
-        } else {
-          mainSelect.innerHTML = `<option value="">Error: ${result.message || 'Failed'}</option>`;
-          subSelect.innerHTML = `<option value="">Error: ${result.message || 'Failed'}</option>`;
-          if (fpsSelect) fpsSelect.innerHTML = '<option value="">Error</option>';
-          if (bitrateSelect) bitrateSelect.innerHTML = '<option value="">Error</option>';
-          if (protoSelect) protoSelect.innerHTML = '<option value="">Error</option>';
-        }
-      } catch (err) {
-        console.error('[Resolution] Error fetching camera resolution:', cam.id, err);
-        mainSelect.innerHTML = '<option value="">Error</option>';
-        subSelect.innerHTML = '<option value="">Error</option>';
-        if (fpsSelect) fpsSelect.innerHTML = '<option value="">Error</option>';
-        if (bitrateSelect) bitrateSelect.innerHTML = '<option value="">Error</option>';
-        if (protoSelect) protoSelect.innerHTML = '<option value="">Error</option>';
-      }
-    }
-  },
-
-  async loadNvrCamerasRecordingRanges(nvrId) {
-    const nvrCameras = this.devices.filter(c => c.type === 'CAM' && c.parent_nvr_id === nvrId);
-    for (const cam of nvrCameras) {
-      const container = document.getElementById(`cam-range-${cam.id}`);
-      if (!container) continue;
-      
-      if (!cam.is_online) {
-        container.innerHTML = 'Rec Range: <span style="color: var(--text-muted)">N/A (Camera offline)</span>';
-        continue;
-      }
-      
-      try {
-        const res = await fetch(`/api/devices/${cam.id}/recording-range`);
-        const result = await res.json();
-        
-        if (result.success) {
-          const isMock = '';
-          const firstDate = result.first_rec.split(' ')[0];
-          const lastDate = result.last_rec.split(' ')[0];
-          container.innerHTML = `Rec Range: <strong style="color: var(--text-primary); font-size: 0.7rem;">${firstDate}</strong> to <strong style="color: var(--text-primary); font-size: 0.7rem;">${lastDate}</strong>${isMock}`;
-        } else {
-          container.innerHTML = `Rec Range: <span style="color: var(--text-muted);">${result.message || 'Error'}</span>`;
-        }
-      } catch (err) {
-        console.error('[Range] Error fetching camera recording range:', cam.id, err);
-        container.innerHTML = 'Rec Range: <span style="color: var(--text-muted);">Error</span>';
-      }
-    }
-  },
-
-  populateResolutionSelect(selectEl, streamData) {
-    if (!selectEl || !streamData) return;
-    
-    const currentVal = `${streamData.width}x${streamData.height}`;
-    const standardResolutions = [
-      { value: '1920x1080', label: '1080p (1920x1080)' },
-      { value: '1280x720', label: '720p (1280x720)' },
-      { value: '704x576', label: 'D1 (704x576)' },
-      { value: '640x480', label: 'VGA (640x480)' },
-      { value: '352x288', label: 'CIF (352x288)' }
-    ];
-    
-    let html = '';
-    let found = false;
-    standardResolutions.forEach(res => {
-      const isSelected = res.value === currentVal ? 'selected' : '';
-      if (isSelected) found = true;
-      html += `<option value="${res.value}" ${isSelected}>${res.label}</option>`;
-    });
-    
-    if (!found && streamData.width && streamData.height) {
-      html = `<option value="${currentVal}" selected>Custom (${currentVal})</option>` + html;
-    }
-    
-    selectEl.innerHTML = html;
-    selectEl.disabled = false;
-  },
-
-  async changeCameraResolution(camId, streamType, resolution) {
-    if (!resolution) return;
-    const [width, height] = resolution.split('x').map(Number);
-    const selectEl = document.getElementById(`cam-${camId}-${streamType}-res`);
-    if (selectEl) selectEl.disabled = true;
-    
-    this.showToast(`Updating camera resolution to ${resolution}...`, 'info');
-    
-    try {
-      const res = await fetch(`/api/devices/${camId}/resolution`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stream_type: streamType, width, height })
-      });
-      const result = await res.json();
-      if (result.success) {
-        this.showToast(result.message || 'Resolution updated successfully!', 'success');
-      } else {
-        this.showToast(result.message || 'Failed to update resolution', 'error');
-        // reload
-        const cam = this.devices.find(d => d.id === camId);
-        if (cam && cam.parent_nvr_id) this.loadNvrCamerasResolutions(cam.parent_nvr_id);
-      }
-    } catch (err) {
-      console.error('[Resolution] Change failed:', err);
-      this.showToast('Connection error changing resolution', 'error');
-      const cam = this.devices.find(d => d.id === camId);
-      if (cam && cam.parent_nvr_id) this.loadNvrCamerasResolutions(cam.parent_nvr_id);
-    } finally {
-      if (selectEl) selectEl.disabled = false;
-    }
-  },
-
-  populateFpsSelect(selectEl, currentFps) {
-    if (!selectEl) return;
-    const fpsOptions = [30, 25, 20, 15, 12, 10, 5];
-    let html = '';
-    let found = false;
-    fpsOptions.forEach(fps => {
-      const isSelected = fps === currentFps ? 'selected' : '';
-      if (isSelected) found = true;
-      html += `<option value="${fps}" ${isSelected}>${fps} fps</option>`;
-    });
-    if (!found && currentFps) {
-      html = `<option value="${currentFps}" selected>${currentFps} fps (Custom)</option>` + html;
-    }
-    selectEl.innerHTML = html;
-    selectEl.disabled = false;
-  },
-
-  populateBitrateSelect(selectEl, currentBitrate) {
-    if (!selectEl) return;
-    const bitrateOptions = [8192, 4096, 2048, 1024, 512, 256];
-    let html = '';
-    let found = false;
-    bitrateOptions.forEach(br => {
-      const isSelected = br === currentBitrate ? 'selected' : '';
-      if (isSelected) found = true;
-      const label = br >= 1024 ? `${br / 1024} Mbps` : `${br} Kbps`;
-      html += `<option value="${br}" ${isSelected}>${label}</option>`;
-    });
-    if (!found && currentBitrate) {
-      const label = currentBitrate >= 1024 ? `${currentBitrate / 1024} Mbps` : `${currentBitrate} Kbps`;
-      html = `<option value="${currentBitrate}" selected>${label} (Custom)</option>` + html;
-    }
-    selectEl.innerHTML = html;
-    selectEl.disabled = false;
-  },
-
-  populateProtocolSelect(selectEl, currentProto) {
-    if (!selectEl) return;
-    const protoOptions = ['RTSP', 'HTTP', 'AUTO', 'SRT'];
-    let html = '';
-    let found = false;
-    protoOptions.forEach(p => {
-      const isSelected = p.toUpperCase() === (currentProto || '').toUpperCase() ? 'selected' : '';
-      if (isSelected) found = true;
-      html += `<option value="${p}" ${isSelected}>${p}</option>`;
-    });
-    if (!found && currentProto) {
-      html = `<option value="${currentProto}" selected>${currentProto}</option>` + html;
-    }
-    selectEl.innerHTML = html;
-    selectEl.disabled = false;
-  },
-
-  async changeCameraFramerate(camId, framerate) {
-    if (!framerate) return;
-    const selectEl = document.getElementById(`cam-${camId}-main-fps`);
-    if (selectEl) selectEl.disabled = true;
-    
-    this.showToast(`Updating camera framerate to ${framerate} fps...`, 'info');
-    
-    try {
-      const res = await fetch(`/api/devices/${camId}/resolution`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stream_type: 'main', framerate: parseInt(framerate) })
-      });
-      const result = await res.json();
-      if (result.success) {
-        this.showToast(result.message || 'Framerate updated successfully!', 'success');
-      } else {
-        this.showToast(result.message || 'Failed to update framerate', 'error');
-        const cam = this.devices.find(d => d.id === camId);
-        if (cam && cam.parent_nvr_id) this.loadNvrCamerasResolutions(cam.parent_nvr_id);
-      }
-    } catch (err) {
-      console.error('[Framerate] Change failed:', err);
-      this.showToast('Connection error changing framerate', 'error');
-      const cam = this.devices.find(d => d.id === camId);
-      if (cam && cam.parent_nvr_id) this.loadNvrCamerasResolutions(cam.parent_nvr_id);
-    } finally {
-      if (selectEl) selectEl.disabled = false;
-    }
-  },
-
-  async changeCameraBitrate(camId, bitrate) {
-    if (!bitrate) return;
-    const selectEl = document.getElementById(`cam-${camId}-main-bitrate`);
-    if (selectEl) selectEl.disabled = true;
-    
-    const label = bitrate >= 1024 ? `${bitrate / 1024} Mbps` : `${bitrate} Kbps`;
-    this.showToast(`Updating camera bitrate to ${label}...`, 'info');
-    
-    try {
-      const res = await fetch(`/api/devices/${camId}/resolution`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stream_type: 'main', bitrate: parseInt(bitrate) })
-      });
-      const result = await res.json();
-      if (result.success) {
-        this.showToast(result.message || 'Bitrate updated successfully!', 'success');
-      } else {
-        this.showToast(result.message || 'Failed to update bitrate', 'error');
-        const cam = this.devices.find(d => d.id === camId);
-        if (cam && cam.parent_nvr_id) this.loadNvrCamerasResolutions(cam.parent_nvr_id);
-      }
-    } catch (err) {
-      console.error('[Bitrate] Change failed:', err);
-      this.showToast('Connection error changing bitrate', 'error');
-      const cam = this.devices.find(d => d.id === camId);
-      if (cam && cam.parent_nvr_id) this.loadNvrCamerasResolutions(cam.parent_nvr_id);
-    } finally {
-      if (selectEl) selectEl.disabled = false;
-    }
-  },
-
-  async changeCameraProtocol(camId, protocol) {
-    if (!protocol) return;
-    const selectEl = document.getElementById(`cam-${camId}-main-proto`);
-    if (selectEl) selectEl.disabled = true;
-    
-    this.showToast(`Updating camera transport protocol to ${protocol}...`, 'info');
-    
-    try {
-      const res = await fetch(`/api/devices/${camId}/resolution`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stream_type: 'main', protocol: protocol })
-      });
-      const result = await res.json();
-      if (result.success) {
-        this.showToast(result.message || 'Protocol updated successfully!', 'success');
-      } else {
-        this.showToast(result.message || 'Failed to update protocol', 'error');
-        const cam = this.devices.find(d => d.id === camId);
-        if (cam && cam.parent_nvr_id) this.loadNvrCamerasResolutions(cam.parent_nvr_id);
-      }
-    } catch (err) {
-      console.error('[Protocol] Change failed:', err);
-      this.showToast('Connection error changing protocol', 'error');
-      const cam = this.devices.find(d => d.id === camId);
-      if (cam && cam.parent_nvr_id) this.loadNvrCamerasResolutions(cam.parent_nvr_id);
-    } finally {
-      if (selectEl) selectEl.disabled = false;
-    }
-  },
-
-  async batchChangeCameraResolution(nvrId, resolution) {
-    if (!resolution) return;
-    const [width, height] = resolution.split('x').map(Number);
-    
-    const confirmChange = confirm(`Are you sure you want to change ALL cameras mainstream resolution under this NVR to ${resolution}?`);
-    if (!confirmChange) return;
-    
-    this.showToast(`Batch configuring cameras under NVR to ${resolution}...`, 'info');
-    
-    try {
-      const res = await fetch(`/api/devices/nvr/${nvrId}/batch-resolution`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stream_type: 'main', width, height })
-      });
-      const result = await res.json();
-      if (result.success) {
-        if (result.overall_success) {
-          this.showToast('All camera resolutions updated successfully!', 'success');
-        } else {
-          console.warn('[Resolution] Batch update completed with some errors:', result.results);
-          const failures = result.results.filter(r => !r.success);
-          failures.forEach(f => {
-            console.error(`- Camera "${f.cam_name}" failed: ${f.message}`);
-          });
-          this.showToast('Batch complete with some errors. Check Developer Console (F12) for details.', 'warning');
-        }
-        // reload NVR camera resolutions
-        this.loadNvrCamerasResolutions(nvrId);
-      } else {
-        this.showToast(result.message || 'Batch update failed', 'error');
-      }
-    } catch (err) {
-      console.error('[Resolution] Batch update failed:', err);
-      this.showToast('Connection error performing batch update', 'error');
-    }
-  },
-
-  async loadNvrTimeDifferences() {
-    const nvrs = this.devices.filter(d => d.type === 'NVR');
-    for (const nvr of nvrs) {
-      const cell = document.getElementById(`nvr-time-diff-${nvr.id}`);
-      if (!cell) continue;
-      
-      if (!nvr.is_online) {
-        cell.innerHTML = '<span style="color:var(--text-muted)">N/A</span>';
-        continue;
-      }
-      
-      cell.innerHTML = '<span style="font-size:0.75rem; color:var(--text-secondary)">Loading...</span>';
-      
-      try {
-        const res = await fetch(`/api/devices/${nvr.id}/nvr-time`);
-        const result = await res.json();
-        
-        if (result.success) {
-          const diff = result.diff_seconds;
-          let badgeClass = 'recording-ok';
-          let diffStr = '';
-          
-          if (Math.abs(diff) <= 5) {
-            diffStr = 'Synced';
-            badgeClass = 'recording-ok';
-          } else {
-            const prefix = diff > 0 ? '+' : '';
-            const absSecs = Math.abs(diff);
-            if (absSecs < 60) {
-              diffStr = `${prefix}${diff}s`;
-            } else {
-              const m = Math.floor(absSecs / 60);
-              const s = Math.round(absSecs % 60);
-              diffStr = `${prefix}${m}m ${s}s`;
-            }
-            
-            badgeClass = absSecs > 60 ? 'recording-issue' : 'recording-unknown';
-          }
-          
-          const isMock = '';
-          
-          cell.innerHTML = `<span class="device-card-badge ${badgeClass}" title="NVR Time: ${result.nvr_time}\nNTP Time: ${result.ntp_time}">${diffStr}</span>${isMock}`;
-        } else {
-          cell.innerHTML = `<span class="device-card-badge recording-issue" title="${result.message || 'Error'}">Error</span>`;
-        }
-      } catch (err) {
-        console.error('[Time] Failed to fetch time difference for NVR', nvr.id, err);
-        cell.innerHTML = '<span class="device-card-badge recording-issue">Error</span>';
-      }
-    }
-  },
-
-  async syncNvrTime(nvrId) {
-    this.showToast('Configuring and syncing NVR time with NTP server...', 'info');
-    const cell = document.getElementById(`nvr-time-diff-${nvrId}`);
-    if (cell) cell.innerHTML = '<span style="font-size:0.75rem; color:var(--text-secondary)">Syncing...</span>';
-    
-    try {
-      const res = await fetch(`/api/devices/${nvrId}/sync-time`, { method: 'POST' });
-      const result = await res.json();
-      
-      if (result.success) {
-        this.showToast(result.message || 'NVR Clock successfully synced!', 'success');
-        setTimeout(() => {
-          this.loadNvrTimeDifferences();
-        }, 1500);
-      } else {
-        this.showToast(result.message || 'Failed to sync NVR clock', 'error');
-        this.loadNvrTimeDifferences();
-      }
-    } catch (err) {
-      console.error('[Time] Sync request failed:', err);
-      this.showToast('Connection error triggering time sync', 'error');
-      this.loadNvrTimeDifferences();
-    }
-  },
-
-  // Live Camera preview modal state variables
-  liveStreamInterval: null,
-  liveStreamCamId: null,
-  liveStreamName: null,
-
-  openCameraLiveModal(camId, name) {
-    this.liveStreamCamId = camId;
-    this.liveStreamName = name;
-    
-    const overlay = document.getElementById('liveStreamModalOverlay');
-    const title = document.getElementById('liveStreamModalTitle');
-    const img = document.getElementById('liveStreamImg');
-    const loading = document.getElementById('liveStreamLoading');
-    const errorOverlay = document.getElementById('liveStreamErrorOverlay');
-    const fpsSelect = document.getElementById('liveStreamFps');
-    
-    if (!overlay || !img) return;
-    
-    title.textContent = `Live Camera Feed: ${name}`;
-    img.src = '';
-    if (loading) loading.style.display = 'flex';
-    if (errorOverlay) errorOverlay.style.display = 'none';
-    
-    overlay.classList.add('active');
-    
-    // Default refresh rate: 2 frames/sec (500ms)
-    const intervalMs = fpsSelect ? parseInt(fpsSelect.value) : 500;
-    this.startLiveStreamRefresh(intervalMs);
-  },
-
-  startLiveStreamRefresh(ms) {
-    this.clearLiveStreamRefresh();
-    
-    // Initial fetch
-    this.refreshLiveStreamSnapshot();
-    
-    if (ms > 0) {
-      this.liveStreamInterval = setInterval(() => {
-        this.refreshLiveStreamSnapshot();
-      }, ms);
-    }
-  },
-
-  clearLiveStreamRefresh() {
-    if (this.liveStreamInterval) {
-      clearInterval(this.liveStreamInterval);
-      this.liveStreamInterval = null;
-    }
-  },
-
-  refreshLiveStreamSnapshot() {
-    const img = document.getElementById('liveStreamImg');
-    if (!img || !this.liveStreamCamId) return;
-    
-    // Add cache buster timestamp
-    img.src = `/api/devices/${this.liveStreamCamId}/snapshot?t=${Date.now()}`;
-  },
-
-  changeLiveStreamFps(val) {
-    const ms = parseInt(val);
-    this.startLiveStreamRefresh(ms);
-  },
-
-  closeLiveStreamModal() {
-    this.clearLiveStreamRefresh();
-    this.liveStreamCamId = null;
-    this.liveStreamName = null;
-    
-    const overlay = document.getElementById('liveStreamModalOverlay');
-    const img = document.getElementById('liveStreamImg');
-    if (overlay) overlay.classList.remove('active');
-    if (img) img.src = '';
-  },
-
-  handleLiveStreamError() {
-    const loading = document.getElementById('liveStreamLoading');
-    const errorOverlay = document.getElementById('liveStreamErrorOverlay');
-    
-    if (loading) loading.style.display = 'none';
-    if (errorOverlay) errorOverlay.style.display = 'flex';
   },
 
   // Format integer to Bangladesh currency format (Lakhs)

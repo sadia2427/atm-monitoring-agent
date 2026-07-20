@@ -1,0 +1,96 @@
+<nav id="sidebarMenu" class="col-md-2 col-lg-2 d-md-block bg-dark sidebar collapse border-end border-secondary">
+    <div class="position-sticky pt-3 sidebar-sticky h-100 overflow-auto">
+        
+        <ul class="nav flex-column mb-3">
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'dashboard' %}active text-primary fw-bold bg-secondary bg-opacity-25 rounded{% endif %}" href="/">
+                    <i class="bi bi-grid me-2"></i>
+                    Dashboard
+                </a>
+            </li>
+        </ul>
+
+        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">
+            <span>Live Monitoring</span>
+        </h6>
+        <ul class="nav flex-column mb-3">
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'atm' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-display me-2"></i> ATM
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'crm' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-bank me-2"></i> CRM
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'nvr' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-server me-2"></i> NVR
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'camera' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-camera-video me-2"></i> Camera
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'server' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-pc-display me-2"></i> Server
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'router' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-router me-2"></i> Router
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'agent-health' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-activity me-2"></i> Agent Health
+                </a>
+            </li>
+        </ul>
+
+        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">
+            <span>Operations</span>
+        </h6>
+        <ul class="nav flex-column mb-3">
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'alerts' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-exclamation-triangle me-2 text-danger"></i> Alert Center
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'reports' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-file-earmark-bar-graph me-2"></i> Reports
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'analytics' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-graph-up me-2"></i> Analytics
+                </a>
+            </li>
+        </ul>
+
+        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">
+            <span>System</span>
+        </h6>
+        <ul class="nav flex-column mb-4">
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'administration' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-people me-2"></i> Administration
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'settings' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-gear me-2"></i> Settings
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-light {% if active_page == 'audit' %}active text-primary bg-secondary bg-opacity-25 rounded{% endif %}" href="#">
+                    <i class="bi bi-journal-text me-2"></i> Audit Log
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>

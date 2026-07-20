@@ -1,0 +1,939 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid p-0 m-0">
+<div class="content-area">
+
+      <!-- ═══ DASHBOARD VIEW ═══ -->
+      <section class="view active" id="view-dashboard">
+        
+        <!-- Top Stats Row (Modernized Bootstrap 5) -->
+        <div class="row g-3 mb-4">
+          <!-- All Nodes -->
+          <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 border-start border-primary border-4 shadow-sm">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="card-title text-muted text-uppercase mb-0 fw-semibold" style="font-size: 0.75rem;">All Nodes</h6>
+                  <i class="bi bi-diagram-3 text-primary fs-4"></i>
+                </div>
+                <div class="d-flex align-items-baseline">
+                  <h2 class="mb-0 fw-bold me-2" id="db-total-nodes">0</h2>
+                  <span class="text-muted small">Total</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Online Nodes -->
+          <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 border-start border-success border-4 shadow-sm">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="card-title text-muted text-uppercase mb-0 fw-semibold" style="font-size: 0.75rem;">Online</h6>
+                  <i class="bi bi-check-circle text-success fs-4"></i>
+                </div>
+                <div class="d-flex align-items-baseline">
+                  <h2 class="mb-0 fw-bold me-2" id="db-online-nodes">0</h2>
+                  <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 me-2" id="db-online-pct">0%</span>
+                  <span class="text-muted small">Active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Down Nodes -->
+          <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 border-start border-danger border-4 shadow-sm">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="card-title text-muted text-uppercase mb-0 fw-semibold" style="font-size: 0.75rem;">Down</h6>
+                  <i class="bi bi-x-circle text-danger fs-4"></i>
+                </div>
+                <div class="d-flex align-items-baseline">
+                  <h2 class="mb-0 fw-bold me-2" id="db-down-nodes">0</h2>
+                  <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 me-2" id="db-down-pct">0%</span>
+                  <span class="text-muted small">Offline</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Warning Nodes -->
+          <div class="col-sm-6 col-xl-3">
+            <div class="card h-100 border-start border-warning border-4 shadow-sm" onclick="App.showWarningNvrDetails()" style="cursor: pointer;">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="card-title text-muted text-uppercase mb-0 fw-semibold" style="font-size: 0.75rem;">Warning</h6>
+                  <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
+                </div>
+                <div class="d-flex align-items-baseline">
+                  <h2 class="mb-0 fw-bold me-2" id="db-warning-nodes">0</h2>
+                  <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 me-2" id="db-warning-pct">0%</span>
+                  <span class="text-muted small">Issue</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub Counters Grid (Modernized Bootstrap 5) -->
+        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-6 g-3 mb-4">
+          <div class="col">
+            <div class="card h-100 border-top border-primary border-3 shadow-sm transition-hover" onclick="App.switchView('atm')" style="cursor: pointer;">
+              <div class="card-body d-flex align-items-center p-2 p-xl-3">
+                <i class="bi bi-bank fs-3 text-primary me-3 opacity-75"></i>
+                <div class="d-flex flex-column">
+                  <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">ATM</span>
+                  <span class="fs-4 fw-bold lh-1 mb-1 text-light" id="sc-atm-count">0</span>
+                  <span class="text-success" style="font-size: 0.7rem; font-weight: 500;" id="sc-atm-online">0 Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card h-100 border-top border-info border-3 shadow-sm transition-hover" onclick="App.switchView('nvr')" style="cursor: pointer;">
+              <div class="card-body d-flex align-items-center p-2 p-xl-3">
+                <i class="bi bi-server fs-3 text-info me-3 opacity-75"></i>
+                <div class="d-flex flex-column">
+                  <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">NVR</span>
+                  <span class="fs-4 fw-bold lh-1 mb-1 text-light" id="sc-nvr-count">0</span>
+                  <span class="text-success" style="font-size: 0.7rem; font-weight: 500;" id="sc-nvr-online">0 Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card h-100 border-top border-success border-3 shadow-sm transition-hover" onclick="App.switchView('cameras')" style="cursor: pointer;">
+              <div class="card-body d-flex align-items-center p-2 p-xl-3">
+                <i class="bi bi-camera-video fs-3 text-success me-3 opacity-75"></i>
+                <div class="d-flex flex-column">
+                  <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">CAM</span>
+                  <span class="fs-4 fw-bold lh-1 mb-1 text-light" id="sc-cam-count">0</span>
+                  <span class="text-success" style="font-size: 0.7rem; font-weight: 500;" id="sc-cam-online">0 Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card h-100 border-top border-warning border-3 shadow-sm transition-hover" onclick="App.switchView('crm')" style="cursor: pointer;">
+              <div class="card-body d-flex align-items-center p-2 p-xl-3">
+                <i class="bi bi-pc-display fs-3 text-warning me-3 opacity-75"></i>
+                <div class="d-flex flex-column">
+                  <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">CRM</span>
+                  <span class="fs-4 fw-bold lh-1 mb-1 text-light" id="sc-crm-count">0</span>
+                  <span class="text-success" style="font-size: 0.7rem; font-weight: 500;" id="sc-crm-online">0 Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card h-100 border-top border-danger border-3 shadow-sm transition-hover" onclick="App.switchView('router')" style="cursor: pointer;">
+              <div class="card-body d-flex align-items-center p-2 p-xl-3">
+                <i class="bi bi-router fs-3 text-danger me-3 opacity-75"></i>
+                <div class="d-flex flex-column">
+                  <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Router</span>
+                  <span class="fs-4 fw-bold lh-1 mb-1 text-light" id="sc-router-count">0</span>
+                  <span class="text-success" style="font-size: 0.7rem; font-weight: 500;" id="sc-router-online">0 Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card h-100 border-top border-secondary border-3 shadow-sm transition-hover" onclick="App.switchView('server')" style="cursor: pointer;">
+              <div class="card-body d-flex align-items-center p-2 p-xl-3">
+                <i class="bi bi-hdd-stack fs-3 text-secondary me-3 opacity-75"></i>
+                <div class="d-flex flex-column">
+                  <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Server</span>
+                  <span class="fs-4 fw-bold lh-1 mb-1 text-light" id="sc-server-count">0</span>
+                  <span class="text-success" style="font-size: 0.7rem; font-weight: 500;" id="sc-server-online">0 Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Layout Grid -->
+        <div class="db-grid-main">
+          
+          <!-- LEFT COLUMN (Alerts, Charts, Table) -->
+          <div class="db-col-left">
+            <!-- CRITICAL ALERTS Panel -->
+            <div class="db-panel panel-critical-alerts">
+              <div class="panel-header alert-red-header">
+                <span style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">
+                  ⚠️ CRITICAL ALERTS (<span id="critical-alerts-count">0</span>)
+                </span>
+                <span class="header-action" onclick="App.switchView('alerts')" style="cursor:pointer; font-size: 0.8rem;">View All Alerts &gt;</span>
+              </div>
+              <div class="panel-body" id="db-critical-alerts-list" style="max-height: 120px; overflow-y: auto; padding: 0.5rem 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                <!-- list dynamically populated -->
+              </div>
+            </div>
+
+            <!-- CHARTS ROW -->
+            <div class="db-charts-row">
+              <!-- Network Status Donut Chart -->
+              <div class="db-panel chart-donut-panel">
+                <div class="panel-header">Network Status (Last 5 Minutes)</div>
+                <div class="panel-body chart-body-donut">
+                  <div class="donut-wrapper" style="position: relative; width: 140px; height: 140px;">
+                    <canvas id="networkStatusChart"></canvas>
+                  </div>
+                  <div class="donut-legend" id="donutLegend" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; justify-content: center; font-size: 0.85rem;">
+                    <!-- populated dynamically -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ping Response Summary Line Chart -->
+              <div class="db-panel chart-line-panel">
+                <div class="panel-header">Ping Response Summary (Every 5 Min)</div>
+                <div class="panel-body chart-body-line" style="height: 150px; position: relative;">
+                  <canvas id="pingSummaryChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- RECENT NODE STATUS TABLE -->
+            <div class="db-panel table-panel">
+              <div class="panel-header">
+                <span>Recent Node Status</span>
+                <span class="header-action" onclick="App.switchView('all-nodes')" style="cursor:pointer; font-size: 0.8rem; color: var(--accent-blue);">View All Nodes</span>
+              </div>
+              <div class="panel-body table-body-container" style="overflow-x: auto;">
+                <table class="db-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Name / Location</th>
+                      <th>IP Address</th>
+                      <th>Status</th>
+                      <th>Ping Loss %</th>
+                      <th>Response Time (ms)</th>
+                      <th>Last Check</th>
+                    </tr>
+                  </thead>
+                  <tbody id="db-recent-nodes-tbody">
+                    <!-- populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN (Top Alerts, Notification, System Info) -->
+          <div class="db-col-right">
+            <!-- Top Alerts -->
+            <div class="db-panel right-alerts-panel" style="min-height: 240px; display: flex; flex-direction: column;">
+              <div class="panel-header">Top Alerts</div>
+              <div class="panel-body" id="db-top-alerts-list" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 0.75rem 1rem;">
+                <!-- list populated dynamically -->
+              </div>
+              <div style="text-align: center; padding: 0.5rem; border-top: 1px solid var(--border-color); margin-top: auto;">
+                <span onclick="App.switchView('alerts')" style="cursor: pointer; color: var(--accent-blue); font-size: 0.8rem; font-weight: 500;">View All Alerts</span>
+              </div>
+            </div>
+
+            <!-- Notification Status (Modernized Bootstrap 5) -->
+            <div class="card shadow-sm border-0 mb-3">
+              <div class="card-header bg-dark text-uppercase text-muted fw-bold py-2 border-bottom border-secondary" style="font-size: 0.75rem;">
+                <i class="bi bi-bell me-2"></i>Notification Status
+              </div>
+              <ul class="list-group list-group-flush bg-transparent">
+                <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center py-2 border-secondary">
+                  <span class="d-flex align-items-center gap-2" style="font-size: 0.85rem;">
+                    <i class="bi bi-envelope text-info"></i> Email (60 Min)
+                  </span>
+                  <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" id="db-email-status">● Active</span>
+                </li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center py-2 border-secondary">
+                  <span class="d-flex align-items-center gap-2" style="font-size: 0.85rem;">
+                    <i class="bi bi-chat-dots text-info"></i> SMS (120 Min)
+                  </span>
+                  <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" id="db-sms-status">● Active</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- System Info (Modernized Bootstrap 5) -->
+            <div class="card shadow-sm border-0 mb-3">
+              <div class="card-header bg-dark text-uppercase text-muted fw-bold py-2 border-bottom border-secondary" style="font-size: 0.75rem;">
+                <i class="bi bi-pc-display-horizontal me-2"></i>System Info
+              </div>
+              <ul class="list-group list-group-flush bg-transparent" style="font-size: 0.8rem;">
+                <li class="list-group-item bg-transparent d-flex justify-content-between py-2 border-secondary">
+                  <span class="text-muted">Application Version</span>
+                  <span class="fw-semibold text-light">1.0.0.0</span>
+                </li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between py-2 border-secondary">
+                  <span class="text-muted">Database</span>
+                  <span class="fw-semibold text-light">Local DB</span>
+                </li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between py-2 border-secondary">
+                  <span class="text-muted">Ping Interval</span>
+                  <span class="fw-semibold text-light" id="db-ping-interval">5 Minutes</span>
+                </li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between py-2 border-secondary">
+                  <span class="text-muted">Next Ping</span>
+                  <span class="fw-semibold text-warning" id="db-next-ping">12:00 PM</span>
+                </li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between py-2 border-secondary">
+                  <span class="text-muted">Uptime</span>
+                  <span class="fw-semibold text-light" id="db-uptime">00:00:00:00</span>
+                </li>
+                <li class="list-group-item bg-dark d-flex justify-content-between py-2 border-secondary border-top-0 mt-1">
+                  <span class="text-muted fw-semibold">Server Time</span>
+                  <span class="fw-bold text-info" id="db-server-time">--</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM ROW GRID (ATM Overview, ATM Low Balance, NVR Overview, NVR Last Record) -->
+        <div class="db-grid-bottom" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+          <!-- ATM Overview & Low Balance -->
+          <div class="db-panel bottom-atm-panel" style="display: flex; flex-direction: column;">
+            <div class="panel-header">ATM Overview & Cash Status</div>
+            <div class="panel-body bottom-row-split" style="display: flex; gap: 1rem; padding: 0.75rem 1rem; flex: 1;">
+              <div class="bottom-card-stat border-blue" style="flex: 1; max-width: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.15); border-radius: 8px; padding: 1rem 0;">
+                <span style="font-size: 2.2rem; font-weight: 700; color: var(--accent-blue);" id="bottom-atm-total">0</span>
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">Total ATMs</span>
+              </div>
+              <div class="bottom-table-container" style="flex: 2; overflow-x: auto;">
+                <table class="db-table-mini" style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
+                      <th style="padding: 4px;">ATM</th>
+                      <th style="padding: 4px;">Location</th>
+                      <th style="padding: 4px; text-align: right;">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="db-atm-cash-tbody">
+                    <!-- dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div style="padding: 0.5rem 1rem; border-top: 1px solid var(--border-color); text-align: center; margin-top: auto;">
+              <span onclick="App.switchView('atm')" style="cursor: pointer; color: var(--accent-blue); font-size: 0.8rem; font-weight: 500;">View All ATMs</span>
+            </div>
+          </div>
+
+          <!-- NVR Overview & Last Record -->
+          <div class="db-panel bottom-nvr-panel" style="display: flex; flex-direction: column;">
+            <div class="panel-header">NVR Overview & Last Record</div>
+            <div class="panel-body bottom-row-split" style="display: flex; gap: 1rem; padding: 0.75rem 1rem; flex: 1;">
+              <div class="bottom-card-stat border-purple" style="flex: 1; max-width: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.15); border-radius: 8px; padding: 1rem 0;">
+                <span style="font-size: 2.2rem; font-weight: 700; color: var(--accent-purple);" id="bottom-nvr-total">0</span>
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">Total NVRs</span>
+              </div>
+              <div class="bottom-table-container" style="flex: 2; overflow-x: auto;">
+                <table class="db-table-mini" style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
+                      <th style="padding: 4px;">NVR</th>
+                      <th style="padding: 4px;">Location</th>
+                      <th style="padding: 4px; text-align: right;">Last Record</th>
+                    </tr>
+                  </thead>
+                  <tbody id="db-nvr-record-tbody">
+                    <!-- dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div style="padding: 0.5rem 1rem; border-top: 1px solid var(--border-color); text-align: center; margin-top: auto;">
+              <span onclick="App.switchView('nvr')" style="cursor: pointer; color: var(--accent-blue); font-size: 0.8rem; font-weight: 500;">View All NVRs</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ═══ NVR DEVICES VIEW ═══ -->
+      <section class="view" id="view-nvr">
+        <div class="view-toolbar">
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <h2 class="section-title">NVR Devices</h2>
+            <span class="badge" id="nvrPageCount" style="background:var(--bg-card); padding:4px 8px; border-radius:4px; font-size:0.85rem; border:1px solid var(--border-color);">0 devices</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <button class="btn btn-primary" onclick="App.openAddDeviceModal('NVR')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add NVR
+            </button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table" id="nvrTable">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th style="cursor:pointer; user-select:none;" onclick="App.toggleSort('NVR', 'name')">Name <span id="nvrSortIcon" style="font-size:0.8em; margin-left:4px;">↕</span></th>
+                <th>IP Address</th>
+                <th>Location</th>
+                <th>Ping</th>
+                <th>HDD</th>
+                <th>Last Recording</th>
+                <th>Camera Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="nvrTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="nvrEmptyState" style="display:none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+            <p>No NVR devices found</p>
+            <button class="btn btn-ghost" onclick="App.openAddDeviceModal('NVR')">Add your first NVR</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CAMERAS VIEW ═══ -->
+      <section class="view" id="view-cameras">
+        <div class="view-toolbar">
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <h2 class="section-title">Cameras</h2>
+            <span class="badge" id="camPageCount" style="background:var(--bg-card); padding:4px 8px; border-radius:4px; font-size:0.85rem; border:1px solid var(--border-color);">0 devices</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <button class="btn btn-primary" onclick="App.openAddDeviceModal('CAM')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Camera
+            </button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table" id="camTable">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th style="cursor:pointer; user-select:none;" onclick="App.toggleSort('CAM', 'name')">Name <span id="camSortIcon" style="font-size:0.8em; margin-left:4px;">↕</span></th>
+                <th>IP Address</th>
+                <th>Location</th>
+                <th>Parent NVR</th>
+                <th>Ping</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="camTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="camEmptyState" style="display:none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <p>No cameras found</p>
+            <button class="btn btn-ghost" onclick="App.openAddDeviceModal('CAM')">Add your first camera</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ ATM DEVICES VIEW ═══ -->
+      <section class="view" id="view-atm">
+        <div class="view-toolbar">
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <h2 class="section-title">ATM Devices</h2>
+            <span class="badge" id="atmPageCount" style="background:var(--bg-card); padding:4px 8px; border-radius:4px; font-size:0.85rem; border:1px solid var(--border-color);">0 devices</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <button class="btn btn-primary" onclick="App.openAddDeviceModal('ATM')" id="addAtmBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add ATM
+            </button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table" id="atmTable">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th style="cursor:pointer; user-select:none;" onclick="App.toggleSort('ATM', 'name')">Name <span id="atmSortIcon" style="font-size:0.8em; margin-left:4px;">↕</span></th>
+                <th>IP Address</th>
+                <th>Location</th>
+                <th>Ping</th>
+                <th>Balance</th>
+                <th>ATM Status</th>
+                <th>Last Update</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="atmTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="atmEmptyState" style="display:none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="2" y1="14" x2="22" y2="14"/></svg>
+            <p>No ATM devices found</p>
+            <button class="btn btn-ghost" onclick="App.openAddDeviceModal('ATM')">Add your first ATM</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CRM DEVICES VIEW ═══ -->
+      <section class="view" id="view-crm">
+        <div class="view-toolbar">
+          <h2 class="section-title">CRM Devices</h2>
+          <button class="btn btn-primary" onclick="App.openAddDeviceModal('CRM')" id="addCrmBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add CRM
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="table" id="crmTable">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Name</th>
+                <th>IP Address</th>
+                <th>Location</th>
+                <th>Ping</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="crmTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="crmEmptyState" style="display:none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="4" width="20" height="12" rx="2" ry="2"/><line x1="12" y1="20" x2="12.01" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            <p>No CRM devices found</p>
+            <button class="btn btn-ghost" onclick="App.openAddDeviceModal('CRM')">Add your first CRM</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SERVER DEVICES VIEW ═══ -->
+      <section class="view" id="view-server">
+        <div class="view-toolbar">
+          <h2 class="section-title">Server Devices</h2>
+          <button class="btn btn-primary" onclick="App.openAddDeviceModal('Server')" id="addServerBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Server
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="table" id="serverTable">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Name</th>
+                <th>IP Address</th>
+                <th>Location</th>
+                <th>Ping</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="serverTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="serverEmptyState" style="display:none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+            <p>No servers found</p>
+            <button class="btn btn-ghost" onclick="App.openAddDeviceModal('Server')">Add your first Server</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ ROUTER DEVICES VIEW ═══ -->
+      <section class="view" id="view-router">
+        <div class="view-toolbar">
+          <h2 class="section-title">Router Devices</h2>
+          <button class="btn btn-primary" onclick="App.openAddDeviceModal('Router')" id="addRouterBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Router
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="table" id="routerTable">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Name</th>
+                <th>IP Address</th>
+                <th>Location</th>
+                <th>Ping</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="routerTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="routerEmptyState" style="display:none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><line x1="12" y1="12" x2="12.01" y2="12"/></svg>
+            <p>No routers found</p>
+            <button class="btn btn-ghost" onclick="App.openAddDeviceModal('Router')">Add your first Router</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ ALL NODES VIEW ═══ -->
+      <section class="view" id="view-all-nodes">
+        <div class="view-toolbar">
+          <h2 class="section-title">All Nodes</h2>
+        </div>
+        <div class="table-container">
+          <table class="table" id="allNodesTable">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Type</th>
+                <th>Name</th>
+                <th>IP Address</th>
+                <th>Location</th>
+                <th>Ping</th>
+              </tr>
+            </thead>
+            <tbody id="allNodesTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ CRITICAL ALERTS VIEW ═══ -->
+      <section class="view" id="view-critical-alerts">
+        <div class="view-toolbar">
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <h2 class="section-title" style="color: var(--accent-red); display: flex; align-items: center; gap: 0.5rem;">
+              ⚠️ Active Critical Alerts
+            </h2>
+            <span class="badge" id="criticalPageBadge" style="background:var(--accent-red); padding:4px 8px; border-radius:4px; font-size:0.85rem; color: white;">0 alerts</span>
+          </div>
+        </div>
+        <div class="critical-alerts-container" id="criticalAlertsPageList" style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem 0;">
+          <!-- list dynamically populated -->
+        </div>
+      </section>
+
+      <!-- ═══ ALERT LOG VIEW ═══ -->
+      <section class="view" id="view-alerts">
+        <div class="view-toolbar">
+          <h2 class="section-title">Alert Log</h2>
+          <button class="btn btn-danger" onclick="App.clearAllAlerts()" id="clearAlertsBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Clear All
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="table" id="alertsTable">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Device</th>
+                <th>Type</th>
+                <th>Message</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="alertsTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="alertsEmptyState" style="display:none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <p>No alerts have been sent</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SETTINGS VIEW ═══ -->
+      <section class="view" id="view-settings">
+        <div class="view-toolbar">
+          <h2 class="section-title">Settings</h2>
+          <button class="btn btn-primary" onclick="App.saveSettings()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Settings
+          </button>
+        </div>
+
+        <div class="settings-grid">
+          <!-- Email Settings -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <h3>Email Settings (SMTP)</h3>
+            </div>
+            <div class="form-group">
+              <label>SMTP Host</label>
+              <input type="text" id="smtp_host" placeholder="smtp.gmail.com">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>SMTP Port</label>
+                <input type="number" id="smtp_port" placeholder="587">
+              </div>
+              <div class="form-group">
+                <label>Secure (TLS)</label>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="smtp_secure">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="smtp_user" placeholder="user@gmail.com">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="smtp_pass" placeholder="••••••••">
+            </div>
+            <div class="form-group">
+              <label>From Address</label>
+              <input type="text" id="smtp_from" placeholder="alerts@example.com">
+            </div>
+            <div class="form-group">
+              <label>Recipients <span class="form-hint">(comma separated)</span></label>
+              <input type="text" id="email_recipients" placeholder="admin@example.com, ops@example.com">
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-ghost" onclick="App.testEmail()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Send Test Email
+              </button>
+            </div>
+          </div>
+
+          <!-- SMS Settings -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <h3>SMS Settings (API)</h3>
+            </div>
+            <div class="form-group">
+              <label>API URL</label>
+              <input type="text" id="sms_api_url" placeholder="https://api.sms-provider.com/send">
+            </div>
+            <div class="form-group">
+              <label>HTTP Method</label>
+              <select id="sms_api_method">
+                <option value="POST">POST</option>
+                <option value="GET">GET</option>
+                <option value="PUT">PUT</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Headers <span class="form-hint">(JSON)</span></label>
+              <textarea id="sms_api_headers" rows="3" placeholder='{"Authorization": "Bearer ...", "Content-Type": "application/json"}'></textarea>
+            </div>
+            <div class="form-group">
+              <label>Body Template <span class="form-hint">(JSON, use &#123;&#123;message&#125;&#125; and &#123;&#123;phone&#125;&#125;)</span></label>
+              <textarea id="sms_api_body_template" rows="3" placeholder='{"to": "{{phone}}", "text": "{{message}}"}'></textarea>
+            </div>
+            <div class="form-group">
+              <label>Recipients <span class="form-hint">(comma separated phone numbers)</span></label>
+              <input type="text" id="sms_recipients" placeholder="+1234567890, +0987654321">
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-ghost" onclick="App.testSms()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Send Test SMS
+              </button>
+            </div>
+          <!-- ATM API Settings -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="2" y1="14" x2="22" y2="14"/></svg>
+              <h3>ATM API Integration</h3>
+            </div>
+            <div class="form-group">
+              <label>API Key <span class="form-hint">(For external status updates)</span></label>
+              <input type="text" id="atm_api_key" placeholder="adc_atm_secret_key_2026">
+            </div>
+            <div class="form-group">
+              <label>External Update Endpoint <span class="form-hint">(Read-only example)</span></label>
+              <input type="text" id="atm_endpoint_example" readonly value="http://&lt;server-ip&gt;:3000/api/atm/status?apiKey=..." style="font-family: monospace; font-size: 0.8rem; background: rgba(255,255,255,0.02); color: var(--text-secondary); cursor: not-allowed;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Monitoring Settings -->
+        <div class="settings-card settings-card-wide" style="margin-top: 1.5rem;">
+          <div class="settings-card-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <h3>Monitoring Intervals</h3>
+          </div>
+          <div class="form-row form-row-4">
+            <div class="form-group">
+              <label>Ping Interval (min)</label>
+              <input type="number" id="ping_interval_minutes" placeholder="1" min="1">
+            </div>
+            <div class="form-group">
+              <label>NVR Check Interval (min)</label>
+              <input type="number" id="nvr_check_interval_minutes" placeholder="5" min="1">
+            </div>
+            <div class="form-group">
+              <label>Email Alert After (min)</label>
+              <input type="number" id="email_alert_after_minutes" placeholder="5" min="1">
+            </div>
+            <div class="form-group">
+              <label>SMS Alert After (min)</label>
+              <input type="number" id="sms_alert_after_minutes" placeholder="15" min="1">
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /content-area -->
+  </main>
+
+  <!-- ═══════════════ ADD/EDIT DEVICE MODAL ═══════════════ -->
+  <div class="modal-overlay" id="deviceModalOverlay">
+    <div class="modal" id="deviceModal">
+      <div class="modal-header">
+        <h3 id="deviceModalTitle">Add Device</h3>
+        <button class="modal-close" onclick="App.closeDeviceModal()" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="deviceId">
+        <div class="form-group">
+          <label>Name <span class="required">*</span></label>
+          <input type="text" id="deviceName" placeholder="e.g. NVR-Office-01" required>
+        </div>
+        <div class="form-group">
+          <label>IP Address <span class="required">*</span></label>
+          <input type="text" id="deviceIp" placeholder="192.168.1.100" required>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="deviceType" onchange="App.toggleDeviceTypeFields()">
+            <option value="NVR">NVR</option>
+            <option value="CAM">Camera</option>
+            <option value="ATM">ATM</option>
+            <option value="CRM">CRM</option>
+            <option value="Router">Router</option>
+            <option value="Server">Server</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="deviceLocation" placeholder="e.g. Server Room, Building A">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="deviceNotes" rows="2" placeholder="Optional notes..."></textarea>
+        </div>
+
+        <!-- NVR-only fields -->
+        <div id="nvrFields">
+          <div class="form-divider">
+            <span>Hikvision Credentials</span>
+          </div>
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="hikUsername" placeholder="admin">
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="hikPassword" placeholder="••••••••">
+          </div>
+        </div>
+
+        <!-- Camera-only fields -->
+        <div id="camFields" style="display:none;">
+          <div class="form-divider">
+            <span>Camera Settings</span>
+          </div>
+          <div class="form-group">
+            <label>Parent NVR</label>
+            <select id="parentNvrId">
+              <option value="">None (standalone)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="App.closeDeviceModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="App.saveDevice()">Save Device</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PING HISTORY MODAL ═══════════════ -->
+  <div class="modal-overlay" id="pingModalOverlay">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="pingModalTitle">Ping History</h3>
+        <button class="modal-close" onclick="App.closePingModal()" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="ping-chart-container">
+          <canvas id="pingChartCanvas" class="ping-chart-canvas"></canvas>
+        </div>
+        <div class="ping-chart-legend">
+          <span class="legend-item"><span class="legend-dot green"></span> Successful Ping</span>
+          <span class="legend-item"><span class="legend-dot red"></span> Failed Ping</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TEST EMAIL MODAL ═══════════════ -->
+  <div class="modal-overlay" id="testEmailModalOverlay">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Send Test Email</h3>
+        <button class="modal-close" onclick="App.closeTestEmailModal()" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Recipient Email</label>
+          <input type="email" id="testEmailTo" placeholder="test@example.com">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="App.closeTestEmailModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="App.sendTestEmail()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TEST SMS MODAL ═══════════════ -->
+  <div class="modal-overlay" id="testSmsModalOverlay">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Send Test SMS</h3>
+        <button class="modal-close" onclick="App.closeTestSmsModal()" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" id="testSmsPhone" placeholder="+1234567890">
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <input type="text" id="testSmsMessage" value="ADC Infrastructure Monitoring System test message">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="App.closeTestSmsModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="App.sendTestSms()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TOAST CONTAINER ═══════════════ -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ═══════════════ CONFIRM DIALOG ═══════════════ -->
+  <div class="modal-overlay" id="confirmOverlay">
+    <div class="modal modal-sm confirm-modal">
+      <div class="modal-header">
+        <h3 id="confirmTitle">Confirm</h3>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMessage">Are you sure?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="confirmCancel">Cancel</button>
+        <button class="btn btn-danger" id="confirmOk">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
+
+</div>
+{% endblock %}

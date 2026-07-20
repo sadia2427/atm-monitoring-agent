@@ -43,14 +43,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from routers import auth, devices, alerts, settings, pages
+
 app.include_router(auth.router)
 app.include_router(devices.router)
 app.include_router(alerts.router)
 app.include_router(settings.router)
+app.include_router(pages.router)
 
-
-# Mount static files (wwwroot)
-app.mount("/", StaticFiles(directory="wwwroot", html=True), name="wwwroot")
+# Mount static files (static)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Wrap FastAPI with Socket.IO ASGIApp
 app = socketio.ASGIApp(sio, other_asgi_app=app)
