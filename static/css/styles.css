@@ -1248,6 +1248,7 @@ html {
 }
 */
 
+/* [MIGRATED TO BOOTSTRAP 5 IN PHASE 2 FINAL]
 .db-grid-main {
   display: grid;
   grid-template-columns: 1fr 280px;
@@ -1342,7 +1343,9 @@ html {
 .db-table tr:hover td {
   background: rgba(255, 255, 255, 0.015);
 }
+*/
 
+/* [MIGRATED TO BOOTSTRAP 5 IN PHASE 2 STEP 5]
 .db-table-mini {
   width: 100%;
   border-collapse: collapse;
@@ -1360,6 +1363,7 @@ html {
   padding: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
+*/
 
 .db-alert-item {
   display: flex;
@@ -1382,28 +1386,7 @@ html {
   background: rgba(255, 184, 77, 0.03);
 }
 
-@media (max-width: 1200px) {
-  /* [MIGRATED TO BOOTSTRAP 5 IN PHASE 2 STEP 2]
-  .db-subcounters-grid {
-    grid-template-columns: repeat(3, 1fr);
-  } */
-  .db-charts-row {
-    grid-template-columns: 1fr;
-  }
-  .db-grid-main {
-    grid-template-columns: 1fr;
-  }
-  .db-grid-bottom {
-    grid-template-columns: 1fr;
-  }
-}
 
-@media (max-width: 768px) {
-  /* [MIGRATED TO BOOTSTRAP 5 IN PHASE 2 STEP 2]
-  .db-subcounters-grid {
-    grid-template-columns: repeat(2, 1fr);
-  } */
-}
 
 /* ═══════════════ CRITICAL ALERT CARDS ═══════════════ */
 .critical-alert-card {
